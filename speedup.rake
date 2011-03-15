@@ -27,6 +27,7 @@ namespace :speedup do
       $stderr.partial 'Cloning test database ... '
       Rake::Task['db:test:clone'].invoke
       $stderr.puts 'done.'
+      ActiveRecord::Base.establish_connection(databases['test'])
       ActiveRecord::Base.connection.execute("INSERT INTO #{sm_table} (version) VALUES ('#{schema_digest}');")
     end
   end
