@@ -1,3 +1,8 @@
+# Set to 'true' to automatically run db:migrate.
+# Set to 'false' to just whine and stop.
+AUTO_MIGRATE = true
+
+
 module Rake
   class Application
     def alias_task(new, old)
@@ -47,22 +52,17 @@ namespace :speedup do
     missing  = migrations.keys - migrated
 
     unless missing.empty?
-      $stderr.puts 'Missing migrations:'
+      $stderr.puts "You have #{missing.count} pending migrations:"
       missing.each do |num|
         $stderr.puts "\t#{migrations[num]}"
       end
+
+      abort('Run "rake db:migrate" to update your database then try again.') unless AUTO_MIGRATE
+
       $stderr.puts
-
-      $stderr.puts 'Automatically running db:migrate in 5 seconds.'
-      $stderr.partial 'Control-C to abort: '
-      5.times do
-        $stderr.partial '.'
-        sleep(1)
-      end
-      $stderr.puts ' running.'
-
+      $stderr.puts 'Applying migrations ...'
       Rake::Task['db:migrate'].invoke
-      Rake::Task['db:abort_if_pending_migrations'].invoke
+      $stderr.puts 'Database migrated.'
     end
   end
 end

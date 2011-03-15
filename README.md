@@ -5,6 +5,8 @@ speedup.rake is a Rake task file you can slot into your Rails projects in order 
 
 This will NOT make the actual test suites faster.  It will simply eliminate the (potentially long) delay while Rails loads your project environment and rebuilds your test database unnecessarily.
 
+By default, it will also run "db:migrate" for you if there are pending migrations, rather than just blowing up.  Configure this by editing the file.
+
 Installation
 ------------
 
