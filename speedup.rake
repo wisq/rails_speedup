@@ -23,16 +23,24 @@ namespace :speedup do
     databases = YAML.load_file('config/database.yml')
     ActiveRecord::Base.establish_connection(databases['test'])
 
-    schema_digest = Digest::MD5.file(ENV['SCHEMA'] || "#{Rails.root}/db/schema.rb").hexdigest
+    schema_file = ENV['SCHEMA'] || "#{Rails.root}/db/schema.rb"
+    schema_digest = Digest::MD5.file(schema_file).hexdigest
 
-    sm_table = ActiveRecord::Migrator.schema_migrations_table_name
-    migrated = ActiveRecord::Base.connection.select_values("SELECT version FROM #{sm_table}")
+    found = false
+    begin
+      sm_table = ActiveRecord::Migrator.schema_migrations_table_name
+      migrated = ActiveRecord::Base.connection.select_values("SELECT version FROM #{sm_table}")
+      found = migrated.include?(schema_digest)
+    rescue Exception => ActiveRecord::StatementInvalid
+    end
 
-    unless migrated.include?(schema_digest)
+    unless found
       $stderr.partial 'Cloning test database ... '
       Rake::Task['db:test:clone'].invoke
       $stderr.puts 'done.'
       ActiveRecord::Base.establish_connection(databases['test'])
+
+      schema_digest = Digest::MD5.file(schema_file).hexdigest # might have changed
       ActiveRecord::Base.connection.execute("INSERT INTO #{sm_table} (version) VALUES ('#{schema_digest}');")
     end
   end
